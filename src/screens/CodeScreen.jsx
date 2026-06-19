@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
 import { LS } from '../lib/storage'
+import { getMap } from '../lib/map'
 
 const GUIDE_STEPS = [
   {
@@ -105,6 +106,15 @@ export default function CodeScreen({ onLoad, existing, hasSess, onResume, onRese
   useEffect(() => {
     if (initPreview && !existing) loadPreview(initPreview)
     else if (initCode && !existing) load(initCode)
+  }, [])
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        getMap()?.flyTo({ center: [coords.longitude, coords.latitude], zoom: 13 })
+      },
+      () => {}
+    )
   }, [])
 
   async function loadPreview(token) {
