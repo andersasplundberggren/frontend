@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+
+# Zip-filer
+*.zip
+
+# macOS
+.DS_Store
+__MACOSX/
+
+# Claude Code
+.claude/
+
+# Gamla mappar som inte ska versionshanteras
+Backend/
+LIVE_PWA/

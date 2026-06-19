@@ -1,0 +1,20 @@
+Options -MultiViews
+
+# Long-term cache for content-hashed assets (excludes sw.js via the rule below)
+<FilesMatch "\.(js|css)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# Override: never cache sw.js or index.html (must come AFTER the rule above)
+<FilesMatch "^(sw\.js|index\.html)$">
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
+</FilesMatch>
+
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
