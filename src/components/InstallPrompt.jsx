@@ -36,12 +36,23 @@ export default function InstallPrompt({ installPromptRef }) {
     setVisible(false)
   }
 
+  function tap(fn) {
+    return {
+      onTouchStart: (e) => { e.preventDefault(); e.stopPropagation() },
+      onTouchEnd:   (e) => { e.preventDefault(); e.stopPropagation(); fn() },
+      onClick: fn,
+    }
+  }
+
   return (
-    <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9998,
-      padding: '0 16px 20px',
-      background: 'linear-gradient(to top, rgba(15,23,42,0.98) 80%, transparent)',
-    }}>
+    <div
+      onTouchStart={e => e.stopPropagation()}
+      style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9998,
+        padding: '0 16px 20px',
+        background: 'linear-gradient(to top, rgba(15,23,42,0.98) 80%, transparent)',
+      }}
+    >
       <div style={{
         background: '#1e293b',
         border: '1px solid rgba(249,115,22,0.3)',
@@ -61,7 +72,7 @@ export default function InstallPrompt({ installPromptRef }) {
               <div style={{ color: '#94a3b8', fontSize: 13 }}>Bästa upplevelsen — fungerar offline</div>
             </div>
           </div>
-          <button type="button" onClick={dismiss} onPointerDown={e => e.preventDefault()} aria-label="Stäng" style={{
+          <button type="button" {...tap(dismiss)} aria-label="Stäng" style={{
             background: 'none', border: 'none', color: '#64748b',
             fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 0 0 8px', flexShrink: 0
           }}>
@@ -72,7 +83,7 @@ export default function InstallPrompt({ installPromptRef }) {
         {isIOS ? (
           <IOSInstructions />
         ) : (
-          <button type="button" onClick={installAndroid} onPointerDown={e => e.preventDefault()} style={{
+          <button type="button" {...tap(installAndroid)} style={{
             width: '100%', padding: '13px 0', borderRadius: 10, border: 'none',
             background: '#f97316', color: '#fff', fontWeight: 700,
             fontSize: 15, cursor: 'pointer', marginBottom: 12
@@ -83,7 +94,7 @@ export default function InstallPrompt({ installPromptRef }) {
 
         <Requirements />
 
-        <button type="button" onClick={dismiss} onPointerDown={e => e.preventDefault()} style={{
+        <button type="button" {...tap(dismiss)} style={{
           background: 'none', border: 'none', color: '#64748b',
           fontSize: 13, cursor: 'pointer', width: '100%', paddingTop: 10
         }}>
