@@ -36,70 +36,72 @@ export default function InstallPrompt({ installPromptRef }) {
     setVisible(false)
   }
 
-  function tap(fn) {
+  function btn(fn) {
     return {
-      onTouchStart: (e) => { e.preventDefault(); e.stopPropagation() },
-      onTouchEnd:   (e) => { e.preventDefault(); e.stopPropagation(); fn() },
+      onTouchEnd: (e) => { e.preventDefault(); fn() },
       onClick: fn,
     }
   }
 
   return (
+    // Full-screen overlay: onTouchStart preventDefault blocks iOS from
+    // focusing any input behind the prompt when the user taps anywhere here
     <div
-      onTouchStart={e => e.stopPropagation()}
+      onTouchStart={e => e.preventDefault()}
       style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9998,
-        padding: '0 16px 20px',
-        background: 'linear-gradient(to top, rgba(15,23,42,0.98) 80%, transparent)',
+        position: 'fixed', inset: 0, zIndex: 9997,
+        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
       }}
     >
-      <div style={{
-        background: '#1e293b',
-        border: '1px solid rgba(249,115,22,0.3)',
-        borderRadius: 16,
-        padding: '20px 20px 16px',
-        color: '#f1f5f9',
-        boxShadow: '0 -4px 32px rgba(0,0,0,0.5)',
-        maxWidth: 480,
-        margin: '0 auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/icons/icon-192.png" alt="På Plats" width={40} height={40}
-              style={{ borderRadius: 10, flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>Installera På Plats</div>
-              <div style={{ color: '#94a3b8', fontSize: 13 }}>Bästa upplevelsen — fungerar offline</div>
+      <div style={{ padding: '0 16px 20px' }}>
+        <div style={{
+          background: '#1e293b',
+          border: '1px solid rgba(249,115,22,0.3)',
+          borderRadius: 16,
+          padding: '20px 20px 16px',
+          color: '#f1f5f9',
+          boxShadow: '0 -4px 32px rgba(0,0,0,0.5)',
+          maxWidth: 480,
+          margin: '0 auto',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <img src="/icons/icon-192.png" alt="På Plats" width={40} height={40}
+                style={{ borderRadius: 10, flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Installera På Plats</div>
+                <div style={{ color: '#94a3b8', fontSize: 13 }}>Bästa upplevelsen — fungerar offline</div>
+              </div>
             </div>
+            <button type="button" {...btn(dismiss)} aria-label="Stäng" style={{
+              background: 'none', border: 'none', color: '#64748b',
+              fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 0 0 8px', flexShrink: 0
+            }}>
+              ×
+            </button>
           </div>
-          <button type="button" {...tap(dismiss)} aria-label="Stäng" style={{
+
+          {isIOS ? (
+            <IOSInstructions />
+          ) : (
+            <button type="button" {...btn(installAndroid)} style={{
+              width: '100%', padding: '13px 0', borderRadius: 10, border: 'none',
+              background: '#f97316', color: '#fff', fontWeight: 700,
+              fontSize: 15, cursor: 'pointer', marginBottom: 12
+            }}>
+              Lägg till på hemskärmen
+            </button>
+          )}
+
+          <Requirements />
+
+          <button type="button" {...btn(dismiss)} style={{
             background: 'none', border: 'none', color: '#64748b',
-            fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 0 0 8px', flexShrink: 0
+            fontSize: 13, cursor: 'pointer', width: '100%', paddingTop: 10
           }}>
-            ×
+            Inte nu
           </button>
         </div>
-
-        {isIOS ? (
-          <IOSInstructions />
-        ) : (
-          <button type="button" {...tap(installAndroid)} style={{
-            width: '100%', padding: '13px 0', borderRadius: 10, border: 'none',
-            background: '#f97316', color: '#fff', fontWeight: 700,
-            fontSize: 15, cursor: 'pointer', marginBottom: 12
-          }}>
-            Lägg till på hemskärmen
-          </button>
-        )}
-
-        <Requirements />
-
-        <button type="button" {...tap(dismiss)} style={{
-          background: 'none', border: 'none', color: '#64748b',
-          fontSize: 13, cursor: 'pointer', width: '100%', paddingTop: 10
-        }}>
-          Inte nu
-        </button>
       </div>
     </div>
   )
