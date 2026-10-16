@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiFetch } from '../lib/api'
 import { showToast } from '../lib/toast'
 import { Icons } from './Icons'
+import InteractiveBlock from './InteractiveBlock'
 
 function Lightbox({ src, onClose }) {
   return (
@@ -181,6 +182,9 @@ export default function ContentBlock({ block: b, asgn, sess, placeId, answer: an
             </a>
           </div>
         ) : null
+
+      case 'interactive':
+        return <InteractiveBlock b={b} />
 
       default:
         return null
