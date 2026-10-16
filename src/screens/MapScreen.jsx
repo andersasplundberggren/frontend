@@ -11,6 +11,7 @@ import MysteryPanel from '../components/MysteryPanel'
 import SuspectGuessPanel from '../components/SuspectGuessPanel'
 import MapSettingsPanel from '../components/MapSettingsPanel'
 import TestMenu from '../components/TestMenu'
+import { prefetchAssignmentImages } from '../lib/prefetch'
 
 
 export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGuess, panel, setPanel, place, setPlace, onLeave, visit, answer, revealedClues, revealClue, online, preview, testMode, setTestMode, onTestRestart, onTestVisitAll, onTestExit }) {
@@ -240,6 +241,9 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
     })
     setDist(d)
   }, [pos])
+
+  // Ladda ner uppdragets bilder i förväg (för täckningsglapp).
+  useEffect(() => { prefetchAssignmentImages(asgn) }, [asgn?.id])
 
   // Simulerad promenad: tryck på kartan för att flytta din position.
   useEffect(() => {

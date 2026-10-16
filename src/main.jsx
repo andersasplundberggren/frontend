@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import mapboxgl from 'mapbox-gl'
@@ -21,14 +22,19 @@ window.USER_MARKER = null
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 )
 
 if ('serviceWorker' in navigator) {
+  // Ladda om när en NY version tar över – men inte vid allra första besöket
+  // (då fanns ingen tidigare service worker och sidan är redan färsk).
+  const hadController = !!navigator.serviceWorker.controller
   let swRefreshing = false
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!swRefreshing) { swRefreshing = true; window.location.reload() }
+    if (hadController && !swRefreshing) { swRefreshing = true; window.location.reload() }
   })
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
