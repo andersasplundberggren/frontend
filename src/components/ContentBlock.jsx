@@ -3,6 +3,7 @@ import { apiFetch } from '../lib/api'
 import { showToast } from '../lib/toast'
 import { Icons } from './Icons'
 import InteractiveBlock from './InteractiveBlock'
+import { ReliabilityBadge, EvidenceDetail } from './MysteryBits'
 
 function Lightbox({ src, onClose }) {
   return (
@@ -88,7 +89,6 @@ export default function ContentBlock({ block: b, asgn, sess, placeId, answer: an
 
       case 'witness': {
         const witnessImg = b.witness_image_url || null
-        const reliability = b.witness_reliability
         return (
           <div className="block" style={{ background: 'rgba(139,92,246,.06)', border: '1px solid rgba(139,92,246,.25)', borderRadius: 10, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14 }}>
@@ -100,11 +100,7 @@ export default function ContentBlock({ block: b, asgn, sess, placeId, answer: an
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{b.witness_name}</div>
                 {b.witness_role && <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{b.witness_role}</div>}
               </div>
-              {reliability && (
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: reliability === 'suspect' ? 'rgba(220,38,38,.15)' : 'rgba(139,92,246,.15)', color: reliability === 'suspect' ? '#ef4444' : '#a78bfa', flexShrink: 0 }}>
-                  {reliability === 'suspect' ? 'Misstänkt' : reliability === 'reliable' ? 'Pålitlig' : 'Osäker'}
-                </span>
-              )}
+              <ReliabilityBadge value={b.witness_reliability} />
             </div>
             {b.witness_statement && (
               <div style={{ borderTop: '1px solid rgba(139,92,246,.15)', padding: '10px 14px' }}>
@@ -128,7 +124,7 @@ export default function ContentBlock({ block: b, asgn, sess, placeId, answer: an
               {b.evidence_label && <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 4, background: 'rgba(59,130,246,.15)', color: 'var(--blue)', fontSize: 11, fontWeight: 700, marginBottom: 8 }}>{b.evidence_label}</span>}
               {b.title && <div style={{ fontWeight: 700, fontSize: 15, marginBottom: b.body ? 6 : 0 }}>{b.title}</div>}
               {b.body && <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>{b.body}</div>}
-              {b.evidence_detail && <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, marginTop: 4 }}>{b.evidence_detail}</div>}
+              <EvidenceDetail text={b.evidence_detail} />
               {b.cta_url && (
                 <a href={b.cta_url} target="_blank" rel="noopener" style={{ display: 'inline-block', marginTop: 10, fontSize: 13, color: 'var(--blue)', textDecoration: 'underline' }}>
                   {b.cta_label || 'Granska närmare'} ↗

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { LS } from '../lib/storage'
 import { apiFetch } from '../lib/api'
+import { ReliabilityBadge, EvidenceDetail } from './MysteryBits'
 
 export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, revealClue, onClose }) {
   const [tab, setTab] = useState('notes')
@@ -124,7 +125,10 @@ export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, 
                         <div style={{ fontWeight: 700, fontSize: 13 }}>{b.witness_name}</div>
                         {b.witness_role && <div style={{ fontSize: 11, color: 'var(--text2)' }}>{b.witness_role}</div>}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text2)' }}>{b.placeTitle}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                        <ReliabilityBadge value={b.witness_reliability} small />
+                        <div style={{ fontSize: 10, color: 'var(--text2)' }}>{b.placeTitle}</div>
+                      </div>
                     </div>
                     {b.witness_statement && (
                       <div style={{ borderTop: '1px solid rgba(139,92,246,.15)', padding: '8px 12px' }}>
@@ -153,6 +157,7 @@ export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, 
                       )}
                       {b.title && <div style={{ fontWeight: 600, fontSize: 13, marginBottom: b.body ? 4 : 0 }}>{b.title}</div>}
                       {b.body && <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5 }}>{b.body}</div>}
+                      <EvidenceDetail text={b.evidence_detail} small />
                     </div>
                   </div>
                 ))}
@@ -213,9 +218,12 @@ export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, 
               <div key={b.id} style={{ margin: '8px 16px', background: 'rgba(220,38,38,.06)', border: '1px solid rgba(220,38,38,.25)', borderRadius: 10, padding: 14 }}>
                 <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 8 }}>Från: {b.placeTitle}</div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(220,38,38,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#ef4444', flexShrink: 0 }}>
-                    {b.suspect_name?.[0] || '?'}
-                  </div>
+                  {b.suspect_image_url
+                    ? <img src={b.suspect_image_url} alt={b.suspect_name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, cursor: 'zoom-in' }} onClick={() => setZoomedSrc(b.suspect_image_url)} />
+                    : <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(220,38,38,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, color: '#ef4444', flexShrink: 0 }}>
+                        {b.suspect_name?.[0] || '?'}
+                      </div>
+                  }
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 16 }}>{b.suspect_name}</div>
                     {b.suspect_role && <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>{b.suspect_role}</div>}

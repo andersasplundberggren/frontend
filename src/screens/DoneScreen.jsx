@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
+import { findCulprit } from '../lib/mystery'
 
 const MODE_CONFIG = {
   mystery:     { emoji: '🔍', labelDone: 'Mordgåtan avklarad', labelPartial: 'Mordgåtan avslutad' },
@@ -34,8 +35,7 @@ export default function DoneScreen({ asgn, sess, prog, guess, onReset, onBack })
   const culprit = guess?.culprit_name
     ? guess
     : (() => {
-        const block = allSuspectBlocks.find(b => !!b.is_culprit || !!b.culprit_explanation)
-          ?? (allSuspectBlocks.length === 1 ? allSuspectBlocks[0] : null)
+        const block = findCulprit(allSuspectBlocks)
         return block ? { culprit_name: block.suspect_name, explanation: block.culprit_explanation, culprit_block: block } : null
       })()
 

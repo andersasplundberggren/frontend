@@ -107,7 +107,7 @@ export default function App() {
 
   function reset() {
     resetMap()
-    ;['pp_a', 'pp_s', 'pp_p', 'pp_code', 'pp_guess', 'pp_revealed_clues', 'pp_start_at'].forEach(k => LS.del(k))
+    ;['pp_a', 'pp_s', 'pp_p', 'pp_code', 'pp_guess', 'pp_revealed_clues', 'pp_start_at', 'pp_notes'].forEach(k => LS.del(k))
     setAsgn(null); setSess(null); setProg({}); setGuess(null)
     setRevealedClues(new Set()); setPlace(null); setPanel(null); setPreview(false); setScreen('code')
   }

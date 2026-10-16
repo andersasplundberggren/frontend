@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { mediaUrl } from '../lib/map'
+import { findCulprit } from '../lib/mystery'
 
 export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, onClose, onLeave }) {
   const allSuspects = places.flatMap(p =>
@@ -10,21 +11,14 @@ export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, 
 
   const [selected, setSelected] = useState(null)
 
-  function isCulprit(b) {
-    if (!b) return false
-    if (!!b.is_culprit || !!b.culprit_explanation) return true
-    // Fallback: if only one suspect exists, they must be the culprit
-    return allSuspects.length === 1
-  }
-
   function submit(skip = false) {
     if (!skip && !selected) return
-    const culprit = allSuspects.find(b => !!b.is_culprit || !!b.culprit_explanation)
-      ?? (allSuspects.length === 1 ? allSuspects[0] : null)
+    const culprit = findCulprit(allSuspects)
     onGuess({
       suspect_block_id: skip ? null : selected?.id,
       suspect_name: skip ? culprit?.suspect_name : selected?.suspect_name,
-      is_correct: skip ? null : isCulprit(selected),
+      // Utan markerad skyldig finns inget facit – då varken rätt eller fel.
+      is_correct: skip || !culprit ? null : selected.id === culprit.id,
       culprit_name: culprit?.suspect_name,
       culprit_block_id: culprit?.id,
       explanation: culprit?.culprit_explanation || '',
@@ -139,7 +133,16 @@ function ResultView({ guess, allSuspects, onClose, onLeave }) {
         <div className="sheet-handle" />
 
         <div className="sheet-body" style={{ padding: '24px 16px 8px', textAlign: 'center' }}>
-          {!guess.skipped && (
+          {!guess.culprit_name && (
+            <>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
+              <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 6 }}>Fallet är avslutat</div>
+              <div style={{ fontSize: 15, color: 'var(--text2)', marginBottom: 20 }}>
+                {guess.skipped ? 'Det här uppdraget har inget facit för vem som är skyldig.' : `Du pekade ut ${guess.suspect_name}.`}
+              </div>
+            </>
+          )}
+          {guess.culprit_name && !guess.skipped && (
             <>
               <div style={{ fontSize: 40, marginBottom: 8 }}>{guess.is_correct ? '🎉' : '❌'}</div>
               <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 6 }}>
@@ -152,7 +155,7 @@ function ResultView({ guess, allSuspects, onClose, onLeave }) {
               </div>
             </>
           )}
-          {guess.skipped && (
+          {guess.culprit_name && guess.skipped && (
             <>
               <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
               <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 6 }}>Svaret</div>
