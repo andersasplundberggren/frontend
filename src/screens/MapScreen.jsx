@@ -10,9 +10,17 @@ import PlaceDetailPanel from '../components/PlaceDetailPanel'
 import MysteryPanel from '../components/MysteryPanel'
 import SuspectGuessPanel from '../components/SuspectGuessPanel'
 import MapSettingsPanel from '../components/MapSettingsPanel'
+import TestMenu from '../components/TestMenu'
 
 
-export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGuess, panel, setPanel, place, setPlace, onLeave, visit, answer, revealedClues, revealClue, online, preview }) {
+export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGuess, panel, setPanel, place, setPlace, onLeave, visit, answer, revealedClues, revealClue, online, preview, testMode, setTestMode, onTestRestart, onTestVisitAll, onTestExit }) {
+  // Testläge: 'quick' = allt öppet, 'walk' = vanliga regler men positionen
+  // sätts genom att trycka på kartan i stället för GPS.
+  const quickTest = preview && testMode !== 'walk'
+  const walkTest  = preview && testMode === 'walk'
+  const walkTestRef = useRef(walkTest)
+  walkTestRef.current = walkTest
+  const [testMenu, setTestMenu] = useState(false)
   const mapReady = useRef(false)
   const completionShown = useRef(false)
   const completionShownTrail = useRef(false)
@@ -35,7 +43,7 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
   const hasSuspects = places.some(p => (p.content_blocks || []).some(b => b.type === 'suspect'))
 
   function unlocked(p) {
-    if (preview) return true
+    if (quickTest) return true
     if (asgn.unlock_mode !== 'linear') return true
     if (p.stop_order === 0) return true
     const prev = places.find(x => x.id === p.unlocks_after_place_id)
@@ -43,7 +51,7 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
   }
   function visited(id) { return !!prog[id]?.visited }
   function near(p) {
-    if (preview) return true
+    if (quickTest) return true
     const d = dist[p.id]; return d !== undefined && d <= (p.activation_radius_meters || 30)
   }
 
@@ -200,7 +208,10 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
   useEffect(() => {
     if (!navigator.geolocation) { setGps('error'); return }
     const id = navigator.geolocation.watchPosition(
-      p => { setGps('active'); setPos({ lat: p.coords.latitude, lng: p.coords.longitude }) },
+      p => {
+        if (walkTestRef.current) return // positionen styrs av tryck på kartan
+        setGps('active'); setPos({ lat: p.coords.latitude, lng: p.coords.longitude })
+      },
       () => setGps('error'),
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
     )
@@ -230,6 +241,19 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
     setDist(d)
   }, [pos])
 
+  // Simulerad promenad: tryck på kartan för att flytta din position.
+  useEffect(() => {
+    const map = getMap()
+    if (!map || !walkTest) return
+    const onClick = e => {
+      // Tryck på en platsmarkör öppnar platsen – flytta inte positionen dit.
+      if (e.originalEvent?.target?.closest?.('.pm-wrap')) return
+      setGps('active'); setPos({ lat: e.lngLat.lat, lng: e.lngLat.lng })
+    }
+    map.on('click', onClick)
+    return () => map.off('click', onClick)
+  }, [walkTest, mapLoadCount])
+
   // Mystery: show whodunit card after player closes the last place detail panel
   useEffect(() => {
     if (!mystery || !hasSuspects || guess || completionShown.current) return
@@ -255,7 +279,8 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
   }
 
   function statusLines() {
-    if (preview) return ['Förhandsvisning', 'klicka för att öppna']
+    if (quickTest) return ['Snabbtest', 'allt är öppet']
+    if (walkTest && !pos) return ['Simulerad promenad', 'tryck på kartan']
     const lines = []
     if (next) {
       if (!unlocked(next)) {
@@ -274,14 +299,23 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none' }}>
       {/* Preview banner */}
       {preview && (
-        <div style={{
+        <button onClick={() => setTestMenu(true)} style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 300,
           background: '#7c3aed', color: '#fff', fontSize: 12, fontWeight: 600,
           textAlign: 'center', padding: '5px 0', letterSpacing: '.06em',
-          pointerEvents: 'none',
+          border: 'none', fontFamily: 'inherit', cursor: 'pointer', pointerEvents: 'auto',
         }}>
-          FÖRHANDSVISNING — Klicka på platser för att öppna dem
-        </div>
+          🧪 TESTLÄGE · {walkTest ? 'SIMULERAD PROMENAD — tryck på kartan' : 'SNABBTEST'} · MENY ▾
+        </button>
+      )}
+      {testMenu && (
+        <TestMenu
+          mode={testMode} setMode={setTestMode}
+          onVisitAll={() => { onTestVisitAll(); setTestMenu(false) }}
+          onRestart={() => { setTestMenu(false); onTestRestart() }}
+          onExit={() => { setTestMenu(false); onTestExit() }}
+          onClose={() => setTestMenu(false)}
+        />
       )}
       {/* Offline banner */}
       {online === false && (

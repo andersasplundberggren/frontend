@@ -4,6 +4,14 @@ import { showToast } from '../lib/toast'
 import { Icons } from './Icons'
 import InteractiveBlock from './InteractiveBlock'
 import { ReliabilityBadge, EvidenceDetail } from './MysteryBits'
+import { gradeLocally } from '../lib/testmode'
+
+// Skickar ett svar till servern – eller rättar lokalt i testläget (ingen session).
+async function submitAnswer(sess, b, body) {
+  if (sess?.preview) return gradeLocally(b, body)
+  const raw = await apiFetch(`/sessions/${sess.session_token}/progress`, { method: 'POST', body })
+  return raw.data ?? raw
+}
 
 function Lightbox({ src, onClose }) {
   return (
@@ -242,11 +250,7 @@ function SolutionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
     if (!text.trim() || loading || done || !canAnswer) return
     setLoading(true)
     try {
-      const raw = await apiFetch(`/sessions/${sess.session_token}/progress`, {
-        method: 'POST',
-        body: { place_id: placeId, block_id: b.id, solution_text: text.trim() },
-      })
-      const data = raw.data ?? raw
+      const data = await submitAnswer(sess, b, { place_id: placeId, block_id: b.id, solution_text: text.trim() })
       const isCorrect = data.is_correct === true || data.is_correct === 1 || data.is_correct === 'true'
         ? true : data.is_correct === false || data.is_correct === 0 || data.is_correct === 'false'
         ? false : undefined
@@ -335,11 +339,7 @@ function QuestionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
     if (!sel || loading || done || !canAnswer) return
     setLoading(true)
     try {
-      const raw = await apiFetch(`/sessions/${sess.session_token}/progress`, {
-        method: 'POST',
-        body: { place_id: placeId, block_id: b.id, chosen_option: sel },
-      })
-      const data = raw.data ?? raw
+      const data = await submitAnswer(sess, b, { place_id: placeId, block_id: b.id, chosen_option: sel })
       const isCorrect = data.is_correct === true || data.is_correct === 1 || data.is_correct === 'true'
         ? true : data.is_correct === false || data.is_correct === 0 || data.is_correct === 'false'
         ? false : undefined

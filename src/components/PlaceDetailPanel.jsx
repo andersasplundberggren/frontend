@@ -22,7 +22,9 @@ export default function PlaceDetailPanel({ place, asgn, sess, prog, dist, unlock
         }).catch(() => {})
       }
     }
-  }, [near])
+    // place.id: panelen återanvänds när man byter plats via listan – utan den
+    // räknades nästa plats aldrig som besökt om "near" redan var sant.
+  }, [near, place.id])
 
   function blockVisible(block) {
     if (block.type === 'text') return true

@@ -12,6 +12,9 @@ import InstallPrompt from './components/InstallPrompt'
 
 export default function App() {
   const [screen, setScreen] = useState(() => {
+    // En testlänk från admin (?preview=) startar alltid ett nytt test,
+    // även om ett spel eller test redan pågår på enheten.
+    if (new URLSearchParams(window.location.search).get('preview')) return 'code'
     const hasSession = !!LS.get('pp_s')
     const hasAssignment = !!LS.get('pp_a')
     return (hasSession && hasAssignment) ? 'map' : 'code'
@@ -24,7 +27,12 @@ export default function App() {
   const [sess, setSess] = useState(() => LS.get('pp_s'))
   const [prog, setProg] = useState(() => LS.get('pp_p') || {})
   const [dark, setDark] = useState(() => LS.get('pp_dark') || false)
-  const [preview, setPreview] = useState(false)
+  // Testläge från admin: sessionen saknar token och har preview:true, så läget
+  // överlever en omladdning. testMode: 'quick' (allt öppet) eller 'walk'
+  // (simulera promenad genom att trycka på kartan).
+  const [preview, setPreview] = useState(() => !!LS.get('pp_s')?.preview)
+  const [testMode, setTestModeState] = useState(() => LS.get('pp_test_mode') || 'quick')
+  const [testRun, setTestRun] = useState(0)
   const [name, setName] = useState(() => LS.get('pp_nickname') || '')
   const [guess, setGuess] = useState(() => LS.get('pp_guess') || null)
   const [revealedClues, setRevealedClues] = useState(() => {
@@ -105,9 +113,23 @@ export default function App() {
     })
   }
 
+  function setTestMode(m) { setTestModeState(m); LS.set('pp_test_mode', m) }
+
+  // Testmeny: nollställ allt spelat men stanna kvar i testläget.
+  function restartTest() {
+    ;['pp_p', 'pp_guess', 'pp_revealed_clues', 'pp_notes', 'pp_start_at'].forEach(k => LS.del(k))
+    setProg({}); setGuess(null); setRevealedClues(new Set()); setPlace(null); setPanel(null)
+    setTestRun(n => n + 1)
+  }
+
+  function visitAllForTest() {
+    setProg(p => Object.fromEntries((asgn?.places || []).map(pl => [pl.id, { ...p[pl.id], visited: true, answers: p[pl.id]?.answers || {} }])))
+    setPlace(null)
+  }
+
   function reset() {
     resetMap()
-    ;['pp_a', 'pp_s', 'pp_p', 'pp_code', 'pp_guess', 'pp_revealed_clues', 'pp_start_at', 'pp_notes'].forEach(k => LS.del(k))
+    ;['pp_a', 'pp_s', 'pp_p', 'pp_code', 'pp_guess', 'pp_revealed_clues', 'pp_start_at', 'pp_notes', 'pp_test_mode'].forEach(k => LS.del(k))
     setAsgn(null); setSess(null); setProg({}); setGuess(null)
     setRevealedClues(new Set()); setPlace(null); setPanel(null); setPreview(false); setScreen('code')
   }
@@ -128,9 +150,15 @@ export default function App() {
             setAsgn({ ...a, _code: code })
             if (playerName) setName(playerName)
             if (isPreview) {
+              // Nytt test: börja från noll så att gamla svar/gissningar inte följer med.
+              ;['pp_guess', 'pp_revealed_clues', 'pp_notes', 'pp_start_at'].forEach(k => LS.del(k))
+              setGuess(null); setRevealedClues(new Set())
+              setTestMode('quick')
               setPreview(true)
               setSess({ session_token: null, preview: true })
               setProg({})
+              // Ta bort länken ur adressfältet så att en omladdning fortsätter testet.
+              window.history.replaceState(null, '', window.location.pathname)
               setScreen('map')
             } else {
               LS.set('pp_code', code)
@@ -155,6 +183,7 @@ export default function App() {
 
       {screen === 'map' && (
         <MapScreen
+          key={testRun}
           asgn={asgn} sess={sess} prog={prog}
           dark={dark} setDark={setDark}
           panel={panel} setPanel={setPanel}
@@ -165,6 +194,8 @@ export default function App() {
           revealedClues={revealedClues} revealClue={revealClue}
           online={online}
           preview={preview}
+          testMode={testMode} setTestMode={setTestMode}
+          onTestRestart={restartTest} onTestVisitAll={visitAllForTest} onTestExit={reset}
         />
       )}
 

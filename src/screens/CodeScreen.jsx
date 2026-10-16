@@ -104,7 +104,16 @@ export default function CodeScreen({ onLoad, existing, hasSess, onResume, onRese
   const [showGuide, setShowGuide] = useState(false)
 
   useEffect(() => {
-    if (initPreview && !existing) loadPreview(initPreview)
+    if (initPreview) {
+      // Testlänk från admin: starta testet. Pågår ett riktigt spel på enheten
+      // frågar vi först, eftersom det då avbryts.
+      const realGame = existing && hasSess && !LS.get('pp_s')?.preview
+      if (!realGame || window.confirm('Ett pågående uppdrag avbryts om du startar testläget. Fortsätta?')) {
+        loadPreview(initPreview)
+      } else {
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+    }
     else if (initCode && !existing) load(initCode)
   }, [])
 
