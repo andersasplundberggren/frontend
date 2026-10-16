@@ -35,10 +35,11 @@ export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, 
         await apiFetch(`/sessions/${sess.session_token}/notes`, {
           method: 'PUT',
           body: { content: val },
+          queue: true, // ingen täckning → senaste versionen skickas senare
         })
         setSyncStatus('saved')
-      } catch {
-        setSyncStatus('error')
+      } catch (e) {
+        setSyncStatus(e.queued ? 'queued' : 'error')
       }
     }, 2000)
   }
@@ -98,7 +99,7 @@ export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, 
               }}
             />
             <div style={{ fontSize: 11, color: syncStatus === 'error' ? 'var(--red)' : 'var(--text2)', marginTop: 8, textAlign: 'right' }}>
-              {syncStatus === 'saving' ? 'Sparar…' : syncStatus === 'error' ? 'Kunde inte spara' : 'Sparad'}
+              {syncStatus === 'saving' ? 'Sparar…' : syncStatus === 'error' ? 'Kunde inte spara' : syncStatus === 'queued' ? 'Sparad på telefonen – synkas när du får täckning' : 'Sparad'}
             </div>
           </div>
         )}

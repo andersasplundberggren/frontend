@@ -50,7 +50,7 @@ export default function DoneScreen({ asgn, sess, prog, guess, onReset, onBack })
     setFinishing(true)
     try {
       if (sess?.session_token) {
-        await apiFetch(`/sessions/${sess.session_token}/complete`, { method: 'POST' }).catch(() => {})
+        await apiFetch(`/sessions/${sess.session_token}/complete`, { method: 'POST', queue: true }).catch(() => {})
       }
     } finally {
       onReset()

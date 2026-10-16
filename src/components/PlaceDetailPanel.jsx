@@ -19,6 +19,7 @@ export default function PlaceDetailPanel({ place, asgn, sess, prog, dist, unlock
         apiFetch(`/sessions/${sess.session_token}/progress`, {
           method: 'POST',
           body: { place_id: place.id },
+          queue: true, // ingen täckning → skickas senare
         }).catch(() => {})
       }
     }

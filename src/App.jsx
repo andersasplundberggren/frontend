@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { LS } from './lib/storage'
 import { resetMap } from './lib/map'
-import { dequeue, enqueue } from './lib/network'
+import { flushQueue, queueSize } from './lib/network'
 import { apiFetch } from './lib/api'
 import { showToast } from './lib/toast'
 import CodeScreen from './screens/CodeScreen'
@@ -50,27 +50,37 @@ export default function App() {
   useEffect(() => { LS.set('pp_p', prog) }, [prog])
   useEffect(() => { LS.set('pp_dark', dark) }, [dark])
 
-  // Online/offline detection + queue replay
+  // Offline-kön: skickas vid start, när nätet kommer tillbaka och varje
+  // minut (mobilens "online"-händelse är inte pålitlig vid svag täckning).
   useEffect(() => {
-    async function handleOnline() {
-      setOnline(true)
-      const items = dequeue()
-      if (!items.length) return
-      let ok = 0
-      const failed = []
-      for (const item of items) {
-        try { await apiFetch(item.path, { method: item.method, body: item.body }); ok++ }
-        catch { failed.push(item) }
-      }
-      failed.forEach(item => enqueue(item.path, item.method, item.body))
-      if (ok > 0) showToast(`${ok} offline-ändringar synkroniserade`, 'info')
+    async function flush() {
+      if (!queueSize()) return
+      const sent = await flushQueue(apiFetch, (item, raw) => {
+        // Ett svar som skickades i efterhand: visa rätt/fel när servern rättat.
+        const b = item.body
+        if (!b?.block_id || !/\/progress$/.test(item.path)) return
+        const data = raw?.data ?? raw ?? {}
+        const isCorrect = data.is_correct === true || data.is_correct === 1 ? true
+          : data.is_correct === false || data.is_correct === 0 ? false : undefined
+        setProg(p => {
+          const prev = p[b.place_id]?.answers?.[b.block_id]
+          if (!prev) return p
+          return { ...p, [b.place_id]: { ...p[b.place_id], answers: { ...p[b.place_id].answers,
+            [b.block_id]: { ...prev, is_correct: isCorrect, points: data.points_earned, pending: false } } } }
+        })
+      })
+      if (sent > 0) showToast(sent === 1 ? 'Sparat svar skickat' : `${sent} sparade ändringar skickade`, 'info')
     }
+    function handleOnline() { setOnline(true); flush() }
     function handleOffline() { setOnline(false) }
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
+    flush()
+    const timer = setInterval(flush, 60000)
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
+      clearInterval(timer)
     }
   }, [])
 

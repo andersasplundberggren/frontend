@@ -9,7 +9,7 @@ import { gradeLocally } from '../lib/testmode'
 // Skickar ett svar till servern – eller rättar lokalt i testläget (ingen session).
 async function submitAnswer(sess, b, body) {
   if (sess?.preview) return gradeLocally(b, body)
-  const raw = await apiFetch(`/sessions/${sess.session_token}/progress`, { method: 'POST', body })
+  const raw = await apiFetch(`/sessions/${sess.session_token}/progress`, { method: 'POST', body, queue: true })
   return raw.data ?? raw
 }
 
@@ -245,6 +245,7 @@ function SolutionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const done = !!ans
+  const pendingAnswer = () => ({ solution_text: text.trim() })
 
   async function send() {
     if (!text.trim() || loading || done || !canAnswer) return
@@ -263,8 +264,13 @@ function SolutionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
         showToast('Svar registrerat', 'info')
       }
     } catch (e) {
-      if (e.offline) showToast('Offline — anslut till internet för att skicka svar', 'wrong')
-      else if (e.message?.includes('409') || e.message?.includes('already')) showToast('Svar redan registrerat', 'info')
+      if (e.offline && e.queued) {
+        // Ingen täckning: svaret är sparat och skickas automatiskt senare.
+        onAnswer({ ...pendingAnswer(), is_correct: undefined, pending: true })
+        showToast('Ingen täckning – svaret sparas och skickas automatiskt', 'info')
+      }
+      else if (e.offline) showToast(e.message, 'wrong')
+      else if (e.status === 409) showToast('Svar redan registrerat', 'info')
       else showToast(e.message || 'Fel', 'wrong')
     } finally {
       setLoading(false)
@@ -291,7 +297,8 @@ function SolutionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
             {ans.solution_text}
           </div>
           <div style={{ fontSize: 13, color: 'var(--text2)', textAlign: 'center' }}>
-            {asgn.grading_mode === 'auto'
+            {ans.pending ? '⏳ Sparat – skickas när du får täckning'
+              : asgn.grading_mode === 'auto'
               ? ans.is_correct === true ? `✓ Rätt · ${ans.points} poäng`
               : ans.is_correct === false ? '✗ Fel svar'
               : 'Svar registrerat'
@@ -327,6 +334,7 @@ function QuestionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
   const [sel, setSel] = useState(ans?.chosen || null)
   const [loading, setLoading] = useState(false)
   const done = !!ans
+  const pendingAnswer = () => ({ chosen: sel })
 
   const opts = [
     b.option_a && { k: 'a', l: b.option_a },
@@ -352,8 +360,13 @@ function QuestionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
         showToast('Svar registrerat', 'info')
       }
     } catch (e) {
-      if (e.offline) showToast('Offline — anslut till internet för att skicka svar', 'wrong')
-      else if (e.message?.includes('409') || e.message?.includes('already')) showToast('Svar redan registrerat', 'info')
+      if (e.offline && e.queued) {
+        // Ingen täckning: svaret är sparat och skickas automatiskt senare.
+        onAnswer({ ...pendingAnswer(), is_correct: undefined, pending: true })
+        showToast('Ingen täckning – svaret sparas och skickas automatiskt', 'info')
+      }
+      else if (e.offline) showToast(e.message, 'wrong')
+      else if (e.status === 409) showToast('Svar redan registrerat', 'info')
       else showToast(e.message || 'Fel', 'wrong')
     } finally {
       setLoading(false)
@@ -391,7 +404,8 @@ function QuestionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
       )}
       {done && (
         <div style={{ marginTop: 10, fontSize: 13, color: 'var(--text2)', textAlign: 'center' }}>
-          {asgn.grading_mode === 'auto'
+          {ans.pending ? '⏳ Sparat – skickas när du får täckning'
+            : asgn.grading_mode === 'auto'
             ? ans.is_correct === true ? `✓ Rätt · ${ans.points} poäng`
             : ans.is_correct === false ? '✗ Fel svar'
             : 'Svar registrerat'
