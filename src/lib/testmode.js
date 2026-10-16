@@ -6,7 +6,7 @@
 export function gradeLocally(block, { chosen_option, solution_text }) {
   if (chosen_option) {
     const ok = !!block.correct_option && chosen_option.toLowerCase() === block.correct_option.toLowerCase()
-    return { is_correct: block.correct_option ? ok : null, points_earned: ok ? (block.points || 0) : 0 }
+    return { is_correct: block.correct_option ? ok : null, points_earned: ok ? (block.points || 0) : 0, explanation: block.explanation || null }
   }
   if (solution_text) {
     const ok = !!block.solution_answer &&

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { mediaUrl } from '../lib/map'
-import { findCulprit } from '../lib/mystery'
+import { submitGuess } from '../lib/mystery'
+import { showToast } from '../lib/toast'
 
 export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, onClose, onLeave }) {
   const allSuspects = places.flatMap(p =>
@@ -10,20 +11,19 @@ export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, 
   )
 
   const [selected, setSelected] = useState(null)
+  const [sending, setSending] = useState(false)
 
-  function submit(skip = false) {
-    if (!skip && !selected) return
-    const culprit = findCulprit(allSuspects)
-    onGuess({
-      suspect_block_id: skip ? null : selected?.id,
-      suspect_name: skip ? culprit?.suspect_name : selected?.suspect_name,
-      // Utan markerad skyldig finns inget facit – då varken rätt eller fel.
-      is_correct: skip || !culprit ? null : selected.id === culprit.id,
-      culprit_name: culprit?.suspect_name,
-      culprit_block_id: culprit?.id,
-      explanation: culprit?.culprit_explanation || '',
-      skipped: skip,
-    })
+  // Gissningen rättas och sparas på servern (i testläget lokalt).
+  async function submit(skip = false) {
+    if ((!skip && !selected) || sending) return
+    setSending(true)
+    try {
+      onGuess(await submitGuess(sess, allSuspects, skip ? null : selected.id))
+    } catch (e) {
+      showToast(e.offline ? 'Ingen täckning – försök igen om en stund' : (e.message || 'Kunde inte skicka gissningen'), 'wrong')
+    } finally {
+      setSending(false)
+    }
   }
 
   if (guess) return <ResultView guess={guess} allSuspects={allSuspects} onClose={onClose} onLeave={onLeave} />
@@ -82,13 +82,14 @@ export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, 
           <button
             className="btn btn-primary btn-block"
             style={{ background: selected ? '#e11d48' : undefined, marginBottom: 10 }}
-            disabled={!selected}
+            disabled={!selected || sending}
             onClick={() => submit(false)}
           >
-            Bekräfta gissning
+            {sending ? 'Skickar…' : 'Bekräfta gissning'}
           </button>
           <button
             className="btn btn-secondary btn-block"
+            disabled={sending}
             onClick={() => submit(true)}
             style={{ color: 'var(--text2)', fontSize: 14 }}
           >

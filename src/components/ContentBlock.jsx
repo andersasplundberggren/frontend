@@ -351,7 +351,7 @@ function QuestionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
       const isCorrect = data.is_correct === true || data.is_correct === 1 || data.is_correct === 'true'
         ? true : data.is_correct === false || data.is_correct === 0 || data.is_correct === 'false'
         ? false : undefined
-      onAnswer({ chosen: sel, is_correct: isCorrect, correct_option: data.correct_option ?? null, points: data.points_earned })
+      onAnswer({ chosen: sel, is_correct: isCorrect, correct_option: data.correct_option ?? null, points: data.points_earned, explanation: data.explanation ?? null })
       if (asgn.grading_mode === 'auto') {
         if (isCorrect === true) showToast(`✓ Rätt! +${data.points_earned} poäng`, 'correct')
         else if (isCorrect === false) showToast('✗ Fel svar', 'wrong')
@@ -392,9 +392,9 @@ function QuestionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
           </button>
         )
       })}
-      {done && b.explanation && asgn.grading_mode === 'auto' && (
+      {done && (ans.explanation || b.explanation) && asgn.grading_mode === 'auto' && (
         <div style={{ marginTop: 10, padding: 10, background: 'var(--bg3)', borderRadius: 8, fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-          {b.explanation}
+          {ans.explanation || b.explanation}
         </div>
       )}
       {!done && (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
-import { findCulprit } from '../lib/mystery'
+import { submitGuess } from '../lib/mystery'
 
 const MODE_CONFIG = {
   mystery:     { emoji: '🔍', labelDone: 'Mordgåtan avklarad', labelPartial: 'Mordgåtan avslutad' },
@@ -9,7 +9,7 @@ const MODE_CONFIG = {
   exploration: { emoji: '🗺️', labelDone: 'Utforskningen klar', labelPartial: 'Utforskningen avslutad' },
 }
 
-export default function DoneScreen({ asgn, sess, prog, guess, onReset, onBack }) {
+export default function DoneScreen({ asgn, sess, prog, guess, onGuess, onReset, onBack }) {
   const [serverData, setServerData] = useState(null)
   const [finishing, setFinishing] = useState(false)
 
@@ -32,12 +32,14 @@ export default function DoneScreen({ asgn, sess, prog, guess, onReset, onBack })
   const allSuspectBlocks = places.flatMap(p => p.content_blocks || []).filter(b =>
     b.block_type === 'suspect' || b.type === 'suspect'
   )
-  const culprit = guess?.culprit_name
-    ? guess
-    : (() => {
-        const block = findCulprit(allSuspectBlocks)
-        return block ? { culprit_name: block.suspect_name, explanation: block.culprit_explanation, culprit_block: block } : null
-      })()
+  // Upplösningen kommer från gissningen. Har spelaren inte gissat hämtas den
+  // från servern (räknas som "hoppade över"); facit finns inte i appen.
+  const culprit = guess?.culprit_name ? guess : null
+
+  useEffect(() => {
+    if (asgn.type !== 'mystery' || !allVisited || guess || !allSuspectBlocks.length) return
+    submitGuess(sess, allSuspectBlocks, null).then(g => onGuess?.(g)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!sess?.session_token) return
@@ -57,7 +59,8 @@ export default function DoneScreen({ asgn, sess, prog, guess, onReset, onBack })
     }
   }
 
-  const culpritBlock = places.flatMap(p => p.content_blocks || []).find(b => b.suspect_name === culprit?.culprit_name)
+  const culpritBlock = allSuspectBlocks.find(b => b.id === culprit?.culprit_block_id)
+    || allSuspectBlocks.find(b => b.suspect_name === culprit?.culprit_name)
 
   return (
     <div className="screen" style={{ overflowY: 'auto' }}>

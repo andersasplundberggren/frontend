@@ -66,7 +66,7 @@ export default function App() {
           const prev = p[b.place_id]?.answers?.[b.block_id]
           if (!prev) return p
           return { ...p, [b.place_id]: { ...p[b.place_id], answers: { ...p[b.place_id].answers,
-            [b.block_id]: { ...prev, is_correct: isCorrect, points: data.points_earned, pending: false } } } }
+            [b.block_id]: { ...prev, is_correct: isCorrect, points: data.points_earned, explanation: data.explanation ?? prev.explanation, pending: false } } } }
         })
       })
       if (sent > 0) showToast(sent === 1 ? 'Sparat svar skickat' : `${sent} sparade ändringar skickade`, 'info')
@@ -210,7 +210,7 @@ export default function App() {
       )}
 
       {screen === 'done' && (
-        <DoneScreen asgn={asgn} sess={sess} prog={prog} guess={guess} onReset={reset} onBack={() => setScreen('map')} />
+        <DoneScreen asgn={asgn} sess={sess} prog={prog} guess={guess} onGuess={g => { setGuess(g); LS.set('pp_guess', g) }} onReset={reset} onBack={() => setScreen('map')} />
       )}
 
       {dupTab && (
