@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { mediaUrl } from '../lib/map'
 import { submitGuess } from '../lib/mystery'
 import { showToast } from '../lib/toast'
+import { detectiveCopy } from '../lib/copy'
 
 export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, onClose, onLeave }) {
   const allSuspects = places.flatMap(p =>
@@ -26,7 +27,8 @@ export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, 
     }
   }
 
-  if (guess) return <ResultView guess={guess} allSuspects={allSuspects} onClose={onClose} onLeave={onLeave} />
+  const T = detectiveCopy(asgn?.type)
+  if (guess) return <ResultView guess={guess} allSuspects={allSuspects} onClose={onClose} onLeave={onLeave} T={T} />
 
   return (
     <>
@@ -35,12 +37,12 @@ export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, 
         <div className="sheet-handle" />
         <div className="sheet-header">
           <button className="sh-action" onClick={onClose}>Stäng</button>
-          <div className="sheet-title">Vem är skyldig?</div>
+          <div className="sheet-title">{T.guessTitle}</div>
           <div style={{ width: 48 }} />
         </div>
 
         <div style={{ padding: '0 16px 8px', fontSize: 14, color: 'var(--text2)', flexShrink: 0 }}>
-          Du har besökt alla platser. Välj den person du tror är mördaren och bekräfta.
+          {T.guessIntro}
         </div>
 
         <div className="sheet-body" style={{ padding: '4px 0' }}>
@@ -124,7 +126,7 @@ function SuspectAvatar({ b, size }) {
   )
 }
 
-function ResultView({ guess, allSuspects, onClose, onLeave }) {
+function ResultView({ guess, allSuspects, onClose, onLeave, T }) {
   const culprit = allSuspects.find(b => b.id === guess.culprit_block_id) || allSuspects.find(b => b.suspect_name === guess.culprit_name)
 
   return (
@@ -145,14 +147,12 @@ function ResultView({ guess, allSuspects, onClose, onLeave }) {
           )}
           {guess.culprit_name && !guess.skipped && (
             <>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>{guess.is_correct ? '🎉' : '❌'}</div>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>{guess.is_correct ? '🎉' : T.wrongEmoji}</div>
               <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 6 }}>
-                {guess.is_correct ? 'Rätt gissning!' : 'Fel gissning'}
+                {guess.is_correct ? T.rightTitle : T.wrongTitle}
               </div>
               <div style={{ fontSize: 15, color: 'var(--text2)', marginBottom: 20 }}>
-                {guess.is_correct
-                  ? `Du hade rätt! ${guess.culprit_name} är skyldig.`
-                  : `Det var ${guess.culprit_name} som var skyldig.`}
+                {guess.is_correct ? T.rightText(guess.culprit_name) : T.wrongText(guess.culprit_name)}
               </div>
             </>
           )}

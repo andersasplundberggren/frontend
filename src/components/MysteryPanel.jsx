@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { LS } from '../lib/storage'
 import { apiFetch } from '../lib/api'
 import { ReliabilityBadge, EvidenceDetail } from './MysteryBits'
+import { detectiveCopy } from '../lib/copy'
 
 export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, revealClue, onClose }) {
   const [tab, setTab] = useState('notes')
@@ -65,7 +66,7 @@ export default function MysteryPanel({ asgn, sess, places, prog, revealedClues, 
         <div className="sheet-handle" />
         <div className="sheet-header">
           <button className="sh-action" onClick={onClose}>Stäng</button>
-          <div className="sheet-title">Fallboken</div>
+          <div className="sheet-title">{detectiveCopy(asgn?.type).book}</div>
           <div style={{ width: 48 }} />
         </div>
 

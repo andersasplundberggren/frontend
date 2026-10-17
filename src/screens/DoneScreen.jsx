@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
 import { submitGuess } from '../lib/mystery'
+import { isMysteryType, detectiveCopy } from '../lib/copy'
 
 const MODE_CONFIG = {
-  mystery:     { emoji: '🔍', labelDone: 'Mordgåtan avklarad', labelPartial: 'Mordgåtan avslutad' },
+  mystery:      { emoji: '🔍', labelDone: 'Mordgåtan avklarad', labelPartial: 'Mordgåtan avslutad' },
+  kids_mystery: { emoji: '🕵️', labelDone: 'Fallet är löst', labelPartial: 'Fallet är avslutat' },
   trail:       { emoji: '🏆', labelDone: 'Tipspromenaden klar', labelPartial: 'Tipspromenaden avslutad' },
   quiz_walk:   { emoji: '🏆', labelDone: 'Tipspromenaden klar', labelPartial: 'Tipspromenaden avslutad' },
   exploration: { emoji: '🗺️', labelDone: 'Utforskningen klar', labelPartial: 'Utforskningen avslutad' },
@@ -16,6 +18,7 @@ export default function DoneScreen({ asgn, sess, prog, guess, onGuess, onReset, 
   const places = asgn.places || []
   const mode = asgn.type || 'exploration'
   const config = MODE_CONFIG[mode] || MODE_CONFIG.exploration
+  const T = detectiveCopy(mode)
 
   // Local stats as fallback while server responds
   const vc = places.filter(p => prog[p.id]?.visited).length
@@ -37,7 +40,7 @@ export default function DoneScreen({ asgn, sess, prog, guess, onGuess, onReset, 
   const culprit = guess?.culprit_name ? guess : null
 
   useEffect(() => {
-    if (asgn.type !== 'mystery' || !allVisited || guess || !allSuspectBlocks.length) return
+    if (!isMysteryType(asgn.type) || !allVisited || guess || !allSuspectBlocks.length) return
     submitGuess(sess, allSuspectBlocks, null).then(g => onGuess?.(g)).catch(() => {})
   }, [])
 
@@ -101,16 +104,16 @@ export default function DoneScreen({ asgn, sess, prog, guess, onGuess, onReset, 
         </div>
 
         {/* Mystery culprit reveal — only if all places visited */}
-        {mode === 'mystery' && !allVisited && (
+        {isMysteryType(mode) && !allVisited && (
           <div style={{ marginBottom: 24, padding: '16px', background: 'var(--bg3)', borderRadius: 12, textAlign: 'center' }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Mordgåtan är olöst</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{T.unsolvedTitle}</div>
             <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-              Du måste besöka alla {places.length} platser för att avslöja vem som är skyldig.
+              {T.unsolvedText(places.length)}
             </div>
           </div>
         )}
-        {mode === 'mystery' && allVisited && culprit && (
+        {isMysteryType(mode) && allVisited && culprit && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text2)', marginBottom: 10 }}>
               {guess?.skipped ? 'SVARET' : guess?.is_correct ? 'RÄTT GISSNING!' : guess ? 'SKYLDIG' : 'DEN SKYLDIGE'}
@@ -118,11 +121,11 @@ export default function DoneScreen({ asgn, sess, prog, guess, onGuess, onReset, 
             {guess && !guess.skipped && (
               <div style={{
                 padding: '8px 12px', borderRadius: 8, marginBottom: 10, fontSize: 14, fontWeight: 600,
-                background: guess.is_correct ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)',
-                color: guess.is_correct ? 'var(--green)' : '#ef4444',
-                border: `1px solid ${guess.is_correct ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)'}`,
+                background: guess.is_correct ? 'rgba(34,197,94,.1)' : T.wrongIsError ? 'rgba(239,68,68,.1)' : 'rgba(249,115,22,.08)',
+                color: guess.is_correct ? 'var(--green)' : T.wrongIsError ? '#ef4444' : 'var(--accent)',
+                border: `1px solid ${guess.is_correct ? 'rgba(34,197,94,.3)' : T.wrongIsError ? 'rgba(239,68,68,.3)' : 'rgba(249,115,22,.3)'}`,
               }}>
-                {guess.is_correct ? '✓ Du gissade rätt!' : `✗ Du gissade ${guess.suspect_name} — det var fel.`}
+                {guess.is_correct ? T.doneRight : T.doneWrong(guess.suspect_name)}
               </div>
             )}
             <div style={{

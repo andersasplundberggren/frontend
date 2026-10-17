@@ -12,6 +12,7 @@ import SuspectGuessPanel from '../components/SuspectGuessPanel'
 import MapSettingsPanel from '../components/MapSettingsPanel'
 import TestMenu from '../components/TestMenu'
 import { prefetchAssignmentImages } from '../lib/prefetch'
+import { isMysteryType, detectiveCopy } from '../lib/copy'
 
 
 export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGuess, panel, setPanel, place, setPlace, onLeave, visit, answer, revealedClues, revealClue, online, preview, testMode, setTestMode, onTestRestart, onTestVisitAll, onTestExit }) {
@@ -39,7 +40,8 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
   const [intro, setIntro] = useState(true)
 
   const places = asgn.places || []
-  const mystery = asgn.type === 'mystery'
+  const mystery = isMysteryType(asgn.type) // mordgåta eller barndeckare
+  const T = detectiveCopy(asgn.type)
   const trail = asgn.type === 'trail' || asgn.type === 'quiz_walk'
   const hasSuspects = places.some(p => (p.content_blocks || []).some(b => b.type === 'suspect'))
 
@@ -416,7 +418,7 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
                 fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
-              {guess ? '🔍 Visa lösningen' : '🔍 Vem är skyldig? →'}
+              {guess ? T.showSolution : T.solveButton}
             </button>
           )}
           {trail && vc === places.length && places.length > 0 && (
@@ -445,7 +447,7 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
         </button>
         {mystery && (
           <button className={`nav-btn ${panel === 'notes' ? 'active' : ''}`} onClick={() => setPanel(p => p === 'notes' ? null : 'notes')}>
-            <Icons.Book />Fallboken
+            <Icons.Book />{T.book}
           </button>
         )}
         <button className="nav-btn danger" onClick={() => setQuit(true)}>
@@ -507,11 +509,10 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
       {showCompletion && mystery && !guess && (
         <div className="dialog-overlay" onClick={() => setShowCompletion(false)}>
           <div className="dialog" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 42, marginBottom: 10 }}>🔍</div>
-            <h2 style={{ marginBottom: 8 }}>Alla platser besökta!</h2>
+            <div style={{ fontSize: 42, marginBottom: 10 }}>{T.emoji}</div>
+            <h2 style={{ marginBottom: 8 }}>{T.allVisitedTitle}</h2>
             <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
-              Du har samlat in alla ledtrådar. Nu är det dags att peka ut den skyldige.
-              Tänk efter noga innan du bekräftar din gissning.
+              {T.allVisitedText}
             </p>
             <div className="d-btns" style={{ flexDirection: 'column', gap: 10 }}>
               <button
@@ -519,7 +520,7 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
                 style={{ background: '#e11d48', width: '100%' }}
                 onClick={() => { setShowCompletion(false); setPanel('solve') }}
               >
-                Lös mordgåtan →
+                {T.solveCta}
               </button>
               <button
                 className="btn btn-secondary"
@@ -568,9 +569,9 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
           <div className="dialog">
             {mystery && hasSuspects && !guess && vc === places.length && places.length > 0 ? (
               <>
-                <h2>Lös mordgåtan?</h2>
+                <h2>{T.quitTitle}</h2>
                 <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.6 }}>
-                  Du har inte pekat ut den skyldige än. Vill du lösa mordgåtan innan du avslutar?
+                  {T.quitText}
                 </p>
                 <div className="d-btns" style={{ flexDirection: 'column', gap: 8 }}>
                   <button
@@ -578,7 +579,7 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
                     style={{ background: '#e11d48', width: '100%' }}
                     onClick={() => { setQuit(false); setPanel('solve') }}
                   >
-                    🔍 Lös mordgåtan
+                    {T.quitCta}
                   </button>
                   <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => setQuit(false)}>
                     Fortsätt utforska
