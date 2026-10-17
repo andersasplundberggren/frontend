@@ -9,7 +9,8 @@ export default function PlaceDetailPanel({ place, asgn, sess, prog, dist, unlock
   const d = dist[place.id]
   const r = place.activation_radius_meters || 30
   const isVisited = prog.visited
-  const blocks = place.content_blocks || []
+  // Frågor märkta "slutrapport" ställs efter gissningen, inte på platsen.
+  const blocks = (place.content_blocks || []).filter(b => !b.in_final_report)
 
   useEffect(() => {
     if (near && unlocked && !isVisited) {

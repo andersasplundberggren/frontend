@@ -2,10 +2,10 @@
 // Körs i en iframe med sandbox="allow-scripts" (utan allow-same-origin):
 // koden får en egen isolerad origin och kommer inte åt appen, dess
 // localStorage eller sessionen. CSP:n nedan stoppar externa skript, CSS
-// och nätverksanrop – bara bilder får hämtas.
+// och nätverksanrop – bara bilder, ljud och video (https) får hämtas.
 // Samma inramning finns i admin (content.ejs → buildInteractiveDoc).
 
-const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src https: data:; font-src data:"
+const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src https: data:; media-src https: data:; font-src data:"
 
 // Rapporterar dokumentets höjd till appen så att iframen kan växa med innehållet.
 const HEIGHT_SCRIPT = `<script>(function(){

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { mediaUrl } from '../lib/map'
-import { submitGuess } from '../lib/mystery'
+import { submitGuess, finalReportQuestions } from '../lib/mystery'
+import ContentBlock from './ContentBlock'
 import { showToast } from '../lib/toast'
 import { detectiveCopy } from '../lib/copy'
 
-export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, onClose, onLeave }) {
+export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, prog = {}, answer, onClose, onLeave }) {
   const allSuspects = places.flatMap(p =>
     (p.content_blocks || [])
       .filter(b => b.type === 'suspect')
@@ -28,7 +29,17 @@ export default function SuspectGuessPanel({ places, sess, asgn, guess, onGuess, 
   }
 
   const T = detectiveCopy(asgn?.type)
-  if (guess) return <ResultView guess={guess} allSuspects={allSuspects} onClose={onClose} onLeave={onLeave} T={T} />
+  // Slutrapport: efter "vem" ställs uppdragets slutrapportfrågor (t.ex. motiv,
+  // avgörande bevis). Svaren rättas som vanliga frågor och sparas i prog.
+  const finals = finalReportQuestions(places)
+  const ansOf = q => prog[q.placeId]?.answers?.[q.id]
+  const nextFinal = finals.find(q => !ansOf(q))
+  if (guess && !guess.skipped && nextFinal) {
+    return <FinalReportStep T={T} q={nextFinal} index={finals.indexOf(nextFinal)} total={finals.length}
+      asgn={asgn} sess={sess} answer={answer} onClose={onClose} />
+  }
+  if (guess) return <ResultView guess={guess} allSuspects={allSuspects} onClose={onClose} onLeave={onLeave} T={T}
+    report={guess.skipped ? [] : finals.map(q => ({ q, a: ansOf(q) }))} />
 
   return (
     <>
@@ -126,7 +137,30 @@ function SuspectAvatar({ b, size }) {
   )
 }
 
-function ResultView({ guess, allSuspects, onClose, onLeave, T }) {
+function FinalReportStep({ T, q, index, total, asgn, sess, answer, onClose }) {
+  return (
+    <>
+      <div className="sheet-overlay" onClick={onClose} />
+      <div className="sheet" style={{ maxHeight: '88vh' }}>
+        <div className="sheet-handle" />
+        <div className="sheet-header">
+          <button className="sh-action" onClick={onClose}>Stäng</button>
+          <div className="sheet-title">{T.reportTitle}</div>
+          <div style={{ width: 48 }} />
+        </div>
+        <div style={{ padding: '0 16px 8px', fontSize: 13, color: 'var(--text2)' }}>
+          {T.reportIntro} · Fråga {index + 2} av {total + 1}
+        </div>
+        <div className="sheet-body" style={{ padding: '4px 16px 24px' }}>
+          <ContentBlock key={q.id} block={q} asgn={asgn} sess={sess} placeId={q.placeId}
+            ans={null} canAnswer onAnswer={a => answer?.(q.placeId, q.id, a)} />
+        </div>
+      </div>
+    </>
+  )
+}
+
+function ResultView({ guess, allSuspects, onClose, onLeave, T, report = [] }) {
   const culprit = allSuspects.find(b => b.id === guess.culprit_block_id) || allSuspects.find(b => b.suspect_name === guess.culprit_name)
 
   return (
@@ -181,6 +215,18 @@ function ResultView({ guess, allSuspects, onClose, onLeave, T }) {
             </div>
           )}
 
+          {report.length > 0 && (
+            <div style={{ textAlign: 'left', marginBottom: 16, padding: '10px 14px', background: 'var(--bg2)', borderRadius: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text2)', marginBottom: 6 }}>{T.reportTitle}</div>
+              <div style={{ fontSize: 14, lineHeight: 1.7 }}>
+                {guess.is_correct ? '✅' : '⬜'} {T.reportWho}
+                {report.map(({ q, a }) => (
+                  <div key={q.id}>{a?.is_correct === true ? '✅' : a?.pending ? '⏳' : '⬜'} {q.title || q.body}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {guess.explanation && (
             <div style={{
               textAlign: 'left', borderLeft: '3px solid var(--accent)',
@@ -190,6 +236,9 @@ function ResultView({ guess, allSuspects, onClose, onLeave, T }) {
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--accent)', marginBottom: 4 }}>Förklaring</div>
               <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6, fontStyle: 'italic' }}>{guess.explanation}</div>
             </div>
+          )}
+          {guess.culprit_audio_url && (
+            <audio controls src={guess.culprit_audio_url} style={{ width: '100%', marginBottom: 16 }} />
           )}
         </div>
 

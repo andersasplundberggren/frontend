@@ -244,7 +244,10 @@ function ClueBlock({ b, maxClues, revealedClues, onReveal }) {
 function SolutionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
-  const done = !!ans
+  // Fel svar på en lösning får rättas: blocket är klart först när svaret är rätt
+  // (eller väntar på täckning / rättas manuellt).
+  const wrong = !!ans && ans.is_correct === false && !ans.pending
+  const done = !!ans && !wrong
   const pendingAnswer = () => ({ solution_text: text.trim() })
 
   async function send() {
@@ -258,7 +261,7 @@ function SolutionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
       onAnswer({ solution_text: text.trim(), is_correct: isCorrect, points: data.points_earned })
       if (asgn.grading_mode === 'auto') {
         if (isCorrect === true) showToast(`✓ Rätt! +${data.points_earned} poäng`, 'correct')
-        else if (isCorrect === false) showToast('✗ Fel svar', 'wrong')
+        else if (isCorrect === false) { showToast('✗ Inte rätt – försök igen', 'wrong'); setText('') }
         else showToast('Svar registrerat', 'info')
       } else {
         showToast('Svar registrerat', 'info')
@@ -280,6 +283,11 @@ function SolutionBlock({ b, asgn, sess, placeId, ans, onAnswer, canAnswer }) {
   return (
     <div className="block card">
       {b.title && <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 6 }}>{b.title}</div>}
+      {wrong && (
+        <div style={{ padding: '8px 12px', borderRadius: 8, marginBottom: 10, fontSize: 13, background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.3)', color: '#ef4444' }}>
+          ✗ "{ans.solution_text}" var inte rätt – försök igen.
+        </div>
+      )}
       {b.body && <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 12 }}>{b.body}</div>}
       {b.solution_hint && (
         <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(217,119,6,.08)', border: '1px solid rgba(217,119,6,.3)', marginBottom: 12, fontSize: 13, color: '#d97706' }}>

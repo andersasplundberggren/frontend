@@ -37,6 +37,7 @@ export async function submitGuess(sess, suspects, suspectBlockId) {
       culprit_name: culprit?.suspect_name,
       culprit_block_id: culprit?.id,
       explanation: culprit?.culprit_explanation || '',
+      culprit_audio_url: culprit?.culprit_audio_url || null,
       skipped: suspectBlockId == null,
     }
   }
@@ -52,6 +53,14 @@ export async function submitGuess(sess, suspects, suspectBlockId) {
     culprit_name: d.culprit_name,
     culprit_block_id: d.culprit_block_id,
     explanation: d.explanation || '',
+    culprit_audio_url: d.culprit_audio_url || null,
     skipped: !!d.skipped,
   }
+}
+
+// Frågor som ställs i slutrapporten efter gissningen (i stället för på platsen).
+export function finalReportQuestions(places) {
+  return places.flatMap(p => (p.content_blocks || [])
+    .filter(b => b.type === 'question' && b.in_final_report)
+    .map(b => ({ ...b, placeId: p.id })))
 }

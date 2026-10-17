@@ -31,6 +31,9 @@ const MYSTERY = {
   doneRight: '✓ Du gissade rätt!',
   doneWrong: name => `✗ Du gissade ${name} — det var fel.`,
   wrongIsError: true,
+  reportTitle: 'Utredningsrapport',
+  reportIntro: 'Slutför din rapport',
+  reportWho: 'Gärningsperson',
 }
 
 const KIDS = {
@@ -58,6 +61,9 @@ const KIDS = {
   doneRight: '🎉 Du löste fallet!',
   doneWrong: name => `Du gissade på ${name} – nära, men det var någon annan.`,
   wrongIsError: false,
+  reportTitle: 'Detektivrapport',
+  reportIntro: 'Några frågor till',
+  reportWho: 'Vem som gjorde det',
 }
 
 export function detectiveCopy(type) {

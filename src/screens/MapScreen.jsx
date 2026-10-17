@@ -482,6 +482,8 @@ export default function MapScreen({ asgn, sess, prog, dark, setDark, guess, onGu
           asgn={asgn}
           guess={guess}
           onGuess={onGuess}
+          prog={prog}
+          answer={answer}
           onClose={() => setPanel(null)}
           onLeave={() => { setPanel(null); onLeave() }}
         />

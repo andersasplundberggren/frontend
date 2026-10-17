@@ -148,6 +148,9 @@ export default function DoneScreen({ asgn, sess, prog, guess, onGuess, onReset, 
                   <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7, fontStyle: 'italic' }}>{culprit.explanation}</div>
                 </div>
               )}
+              {culprit.culprit_audio_url && (
+                <audio controls src={culprit.culprit_audio_url} style={{ width: '100%', marginTop: 10 }} />
+              )}
             </div>
           </div>
         )}
