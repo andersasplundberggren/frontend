@@ -17,7 +17,7 @@ export async function apiFetch(path, opts = {}) {
   let res
   try {
     res = await fetch(`${API_BASE}${path}`, {
-      credentials: 'include',
+      credentials: 'omit', // API:t använder session_token, inte cookies
       ...rest,
       headers: {
         'Accept': 'application/json',
