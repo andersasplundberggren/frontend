@@ -6,6 +6,16 @@ import InteractiveBlock from './InteractiveBlock'
 import { ReliabilityBadge, EvidenceDetail } from './MysteryBits'
 import { gradeLocally } from '../lib/testmode'
 
+// Länkar från admin: http(s), mailto: och tel: visas, utan protokoll läggs
+// https:// till. Andra protokoll (javascript:, data: …) visas inte.
+function safeUrl(u) {
+  const v = typeof u === 'string' ? u.trim() : ''
+  if (!v) return null
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(v)) return v
+  if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return null
+  return 'https://' + v.replace(/^\/+/, '')
+}
+
 // Skickar ett svar till servern – eller rättar lokalt i testläget (ingen session).
 async function submitAnswer(sess, b, body) {
   if (sess?.preview) return gradeLocally(b, body)
@@ -133,8 +143,8 @@ export default function ContentBlock({ block: b, asgn, sess, placeId, answer: an
               {b.title && <div style={{ fontWeight: 700, fontSize: 15, marginBottom: b.body ? 6 : 0 }}>{b.title}</div>}
               {b.body && <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>{b.body}</div>}
               <EvidenceDetail text={b.evidence_detail} />
-              {b.cta_url && (
-                <a href={b.cta_url} target="_blank" rel="noopener" style={{ display: 'inline-block', marginTop: 10, fontSize: 13, color: 'var(--blue)', textDecoration: 'underline' }}>
+              {safeUrl(b.cta_url) && (
+                <a href={safeUrl(b.cta_url)} target="_blank" rel="noopener" style={{ display: 'inline-block', marginTop: 10, fontSize: 13, color: 'var(--blue)', textDecoration: 'underline' }}>
                   {b.cta_label || 'Granska närmare'} ↗
                 </a>
               )}
@@ -179,9 +189,9 @@ export default function ContentBlock({ block: b, asgn, sess, placeId, answer: an
       }
 
       case 'link':
-        return b.cta_url ? (
+        return safeUrl(b.cta_url) ? (
           <div className="block">
-            <a href={b.cta_url} target="_blank" rel="noopener" className="btn btn-secondary btn-block">
+            <a href={safeUrl(b.cta_url)} target="_blank" rel="noopener" className="btn btn-secondary btn-block">
               {b.cta_label || 'Öppna länk'} ↗
             </a>
           </div>
