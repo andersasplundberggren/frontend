@@ -43,6 +43,7 @@ export async function apiFetch(path, opts = {}) {
   if (!res.ok) {
     const err = new Error(data?.error || data?.message || `HTTP ${res.status}`)
     err.status = res.status
+    err.data = data
     throw err
   }
   if (data === null) {

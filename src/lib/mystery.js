@@ -41,10 +41,26 @@ export async function submitGuess(sess, suspects, suspectBlockId) {
       skipped: suspectBlockId == null,
     }
   }
-  const res = await apiFetch(`/sessions/${sess.session_token}/guess`, {
+  const send = () => apiFetch(`/sessions/${sess.session_token}/guess`, {
     method: 'POST',
     body: { suspect_block_id: suspectBlockId ?? null },
   })
+  let res
+  try {
+    res = await send()
+  } catch (e) {
+    // 409: servern saknar besök (t.ex. kvar i offlinekön). Skicka dem och
+    // försök en gång till. Servern räknar inte dubbla besök.
+    const missing = e.status === 409 ? e.data?.missing_place_ids : null
+    if (!Array.isArray(missing) || !missing.length) throw e
+    for (const placeId of missing) {
+      await apiFetch(`/sessions/${sess.session_token}/progress`, {
+        method: 'POST',
+        body: { place_id: placeId },
+      })
+    }
+    res = await send()
+  }
   const d = res.data ?? res
   return {
     suspect_block_id: d.suspect_block_id,
